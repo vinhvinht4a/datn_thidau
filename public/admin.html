@@ -210,7 +210,7 @@ function refreshTypeUI(){
 typeSel.addEventListener('change', refreshTypeUI);
 document.addEventListener('DOMContentLoaded', refreshTypeUI);
 
-const API = 'http://localhost:8080'; // same origin. If API is elsewhere: e.g. 'http://localhost:8080'
+const API = ''; // same origin. If API is elsewhere: e.g. 'http://localhost:8080'
 let token = localStorage.getItem('hv_admin_token') || null;
 let me = null;
 
