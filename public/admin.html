@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  :root{ --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif }
+  *{ box-sizing: border-box }
+  body{ margin:0; background:#f6f7fb; color:#444; font-family:var(--font) }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; background:#fff; border-bottom:1px solid #eee }
+  h1{ font-size:20px; margin:0 }
+  #wrap{ max-width:1200px; margin:0 auto; padding:16px }
+  .box{ background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); padding:12px }
+  .button{ font-family:var(--font); font-weight:800; padding:8px 14px; border-radius:10px; border:0; cursor:pointer }
+  .btn-grey{ background:#44A5DC; color:#fff } .btn-outline{ background:#fff; border:1px solid #ccc }
+  input,select,textarea{ padding:8px 10px; border:1px solid #ddd; border-radius:10px; font-family:var(--font); width:100% }
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 }
+  .tab{ padding:8px 14px; border-radius:999px; border:1px solid #ccc; background:#fff; cursor:pointer }
+  .tab.active{ background:#44A5DC; color:#fff; border-color:#44A5DC }
+  table{ width:100%; border-collapse:collapse; font-size:14px }
+  th,td{ padding:8px; border-bottom:1px solid #eee; text-align:left; vertical-align:top }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+  .muted{ color:#777 }
+  .pill{ display:inline-block; padding:4px 8px; border-radius:999px; background:#f0f2f5; font-size:12px }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛠️ Admin</h1>
+  <div class="row">
+    <input id="email" placeholder="Email quản trị" style="width:240px">
+    <input id="pass" type="password" placeholder="Mật khẩu" style="width:160px">
+    <button id="login" class="button btn-grey">Đăng nhập</button>
+    <span id="who" class="muted"></span>
+  </div>
+</header>
+
+<div id="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="parents">👨‍👩‍👧 Phụ huynh</button>
+    <button class="tab" data-tab="kids">👧 Học sinh</button>
+    <button class="tab" data-tab="questions">❓ Câu hỏi</button>
+    <button class="tab" data-tab="competitions">🏆 Cuộc thi</button>
+  </div>
+
+  <!-- Parents -->
+  <section id="parents" class="box">
+    <div class="row">
+      <input id="p-q" placeholder="Tìm theo tên/email" style="max-width:260px">
+      <button id="p-load" class="button btn-outline">Tải</button>
+    </div>
+    <div id="p-table" style="margin-top:10px"></div>
+  </section>
+
+  <!-- Kids -->
+  <section id="kids" class="box" style="display:none">
+    <div class="row">
+      <input id="k-parent" placeholder="Lọc theo parent_id (tuỳ chọn)" style="max-width:200px">
+      <input id="k-q" placeholder="Tìm theo tên/tuổi/mã" style="max-width:260px">
+      <button id="k-load" class="button btn-outline">Tải</button>
+    </div>
+    <div id="k-table" style="margin-top:10px"></div>
+  </section>
+
+<!-- Questions -->
+<section id="questions" class="box" style="display:none">
+  <h3>Tạo câu hỏi mới</h3>
+  <div class="grid">
+    <!-- left: create form -->
+    <div class="box">
+      <div class="row">
+        <select id="q-subject" style="max-width:140px">
+          <option value="vi">Tiếng Việt</option>
+          <option value="math">Toán</option>
+        </select>
+        <select id="q-type" style="max-width:140px">
+          <option value="mcq">MCQ</option>
+          <option value="numeric">Numeric</option>
+        </select>
+        <label for="q-points">Điểm:</label>
+        <input id="q-points" type="number" value="1" min="1" style="max-width:120px">
+      </div><br>
+
+      <textarea id="q-text" rows="3" placeholder="Nội dung câu hỏi"></textarea><br>
+
+      <!-- MCQ-only -->
+      <div id="q-choices">
+        <div class="row"><input class="choice-label" placeholder="Phương án A"><label><input type="checkbox" class="choice-correct"> Đúng</label></div><br>
+        <div class="row"><input class="choice-label" placeholder="Phương án B"><label><input type="checkbox" class="choice-correct"> Đúng</label></div><br>
+        <div class="row"><input class="choice-label" placeholder="Phương án C"><label><input type="checkbox" class="choice-correct"> Đúng</label></div><br>
+        <div class="row"><input class="choice-label" placeholder="Phương án D"><label><input type="checkbox" class="choice-correct"> Đúng</label></div>
+      </div>
+
+      <!-- Numeric-only -->
+      <div id="q-num" style="display:none; margin-top:8px">
+        <div class="row">
+          <input id="q-num-correct" type="number" step="any" placeholder="Đáp án số đúng" style="max-width:200px">
+          <label for="q-num-tol">Sai số cho phép (tuỳ chọn)</label>
+          <input id="q-num-tol" type="number" step="any" value="0" placeholder="Sai số cho phép (tuỳ chọn)" style="max-width:220px">
+        </div>
+      </div>
+      <br>
+
+      <button id="q-create" class="button btn-grey">➕ Tạo</button>
+    </div>
+
+    <!-- right: list & filters -->
+    <div>
+      <div class="row">
+        <select id="q-filter-subj" style="max-width:140px">
+          <option value="">Tất cả</option>
+          <option value="vi">Tiếng Việt</option>
+          <option value="math">Toán</option>
+        </select>
+        <select id="q-filter-type" style="max-width:140px">
+          <option value="">Tất cả</option>
+          <option value="mcq">MCQ</option>
+          <option value="numeric">Numeric</option>
+        </select>
+        <input id="q-search" placeholder="Tìm nội dung">
+        <button id="q-load" class="button btn-outline">Tải</button>
+      </div>
+      <div id="q-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+</section>
+
+
+  <!-- Competitions -->
+  <section id="competitions" class="box" style="display:none">
+    <h3>Tạo cuộc thi</h3>
+    <div class="grid">
+ <div class="box">
+  <!-- Title -->
+  <label for="c-title">Tiêu đề</label>
+  <input id="c-title" placeholder="Tiêu đề" style="width:100%;  margin-bottom:8px">
+
+  <!-- Subject -->
+  <label for="c-subject">Môn học</label>
+  <select id="c-subject" style="max-width:200px; margin-bottom:8px">
+    <option value="vi">Tiếng Việt</option>
+    <option value="math">Toán</option>
+  </select>
+
+  <!-- Duration & max attempts -->
+  <div class="row" style="margin-bottom:8px">
+    <div>
+      <label for="c-duration">Thời lượng (giây)</label>
+      <input id="c-duration" type="number" value="600" min="30" style="max-width:140px">
+    </div>
+    <div>
+      <label for="c-max">Số lần làm tối đa</label>
+      <input id="c-max" type="number" value="1" min="1" style="max-width:140px">
+    </div>
+  </div>
+
+  <!-- Active / shuffle -->
+  <div class="row" style="margin-bottom:8px">
+    <label><input id="c-active" type="checkbox" checked> Active (đang mở)</label>
+    <label><input id="c-shuffle" type="checkbox" checked> Trộn câu hỏi</label>
+  </div>
+
+  <!-- Number of questions -->
+  <label for="c-count">Số câu hỏi</label>
+  <input id="c-count" type="number" value="10" min="1" style="max-width:140px; margin-bottom:8px">
+
+  <!-- Dates -->
+  <div class="row" style="margin-bottom:8px">
+    <div>
+      <label for="c-start">Bắt đầu</label>
+      <input id="c-start" type="datetime-local" style="max-width:220px">
+    </div>
+    <div>
+      <label for="c-end">Kết thúc</label>
+      <input id="c-end" type="datetime-local" style="max-width:220px">
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button id="c-create" class="button btn-grey">➕ Tạo</button>
+</div>
+
+      <div>
+        <div class="row">
+          <select id="c-filter-subj" style="max-width:140px">
+            <option value="">Tất cả</option><option value="vi">Tiếng Việt</option><option value="math">Toán</option>
+          </select>
+          <button id="c-load" class="button btn-outline">Tải</button>
+        </div>
+        <div id="c-list" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// Toggle MCQ vs Numeric fields in the "create question" form
+const typeSel = document.getElementById('q-type');
+const choicesWrap = document.getElementById('q-choices');
+const numWrap = document.getElementById('q-num');
+
+function refreshTypeUI(){
+  const isNum = typeSel.value === 'numeric';
+  choicesWrap.style.display = isNum ? 'none' : 'block';
+  numWrap.style.display     = isNum ? 'block' : 'none';
+}
+typeSel.addEventListener('change', refreshTypeUI);
+document.addEventListener('DOMContentLoaded', refreshTypeUI);
+
+const API = 'http://localhost:8080'; // same origin. If API is elsewhere: e.g. 'http://localhost:8080'
+let token = localStorage.getItem('hv_admin_token') || null;
+let me = null;
+
+const H = (auth=true)=>({ 'Content-Type':'application/json', ...(auth&&token?{Authorization:'Bearer '+token}:{}) });
+
+function setToken(t, u){
+  token = t; me = u || me;
+  if(t) localStorage.setItem('hv_admin_token', t); else localStorage.removeItem('hv_admin_token');
+  document.getElementById('who').textContent = me ? `Đã đăng nhập: ${me.name} (${me.email||''})` : '';
+}
+
+/* ---- auth ---- */
+document.getElementById('login').onclick = async ()=>{
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('pass').value;
+  const r = await fetch(API+'/api/auth/login', { method:'POST', headers:H(false), body:JSON.stringify({email,password})});
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Đăng nhập lỗi');
+  setToken(j.token, j.user);
+  // sanity check admin by trying a protected endpoint
+  const ping = await fetch(API+'/api/admin/parents', { headers:H() });
+  if(ping.status === 403) { alert('Email này không có quyền admin (xem ADMIN_EMAILS trong .env)'); }
+  loadParents(); loadKids(); loadQuestions(); loadComps();
+};
+
+/* ---- tab handling ---- */
+document.querySelectorAll('.tab').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('section').forEach(s=>s.style.display='none');
+    document.getElementById(b.dataset.tab).style.display='block';
+  };
+});
+
+/* ---- Parents ---- */
+async function loadParents(){
+  const q = document.getElementById('p-q').value.trim();
+  const r = await fetch(API+`/api/admin/parents?q=${encodeURIComponent(q)}`, { headers:H() });
+  const rows = await r.json();
+  const html = rows.length ? `
+    <table><thead><tr><th>ID</th><th>Tên</th><th>Email</th><th>Số bé</th><th>Ngày tạo</th></tr></thead>
+    <tbody>${rows.map(p=>`<tr>
+      <td>${p.id}</td><td>${p.name}</td><td>${p.email}</td><td>${p.kids_count}</td><td>${new Date(p.created_at).toLocaleString('vi-VN')}</td>
+    </tr>`).join('')}</tbody></table>` : '<em>Không có dữ liệu.</em>';
+  document.getElementById('p-table').innerHTML = html;
+}
+document.getElementById('p-load').onclick = loadParents;
+
+/* ---- Kids ---- */
+async function loadKids(){
+  const pid = document.getElementById('k-parent').value.trim();
+  const q = document.getElementById('k-q').value.trim();
+  const url = new URL(API+'/api/admin/kids', location.origin);
+  if(pid) url.searchParams.set('parent_id', pid);
+  if(q) url.searchParams.set('q', q);
+  const r = await fetch(url, { headers:H() }); const rows = await r.json();
+  const html = rows.length ? `
+    <table><thead><tr><th>ID</th><th>Tên</th><th>Tuổi</th><th>Mã</th><th>Phụ Huynh</th><th>Thao tác</th></tr></thead>
+    <tbody>${rows.map(k=>`<tr>
+      <td>${k.id}</td>
+      <td><input value="${k.name}" data-id="${k.id}" class="k-name" style="width:140px"></td>
+      <td><input value="${k.grade||''}" data-id="${k.id}" class="k-grade" style="width:80px"></td>
+      <td><span class="pill">${k.access_code}</span></td>
+      <td>${k.parent_name} <span class="muted">(${k.parent_email})</span></td>
+      <td>
+        <button class="button btn-grey" onclick="saveKid(${k.id})">Lưu</button>
+        <button class="button btn-outline" onclick="delKid(${k.id})">Xoá</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<em>Không có dữ liệu.</em>';
+  document.getElementById('k-table').innerHTML = html;
+}
+async function saveKid(id){
+  const name = document.querySelector(`.k-name[data-id="${id}"]`).value;
+  const grade = document.querySelector(`.k-grade[data-id="${id}"]`).value;
+  const r = await fetch(API+`/api/admin/kids/${id}`, { method:'PATCH', headers:H(), body:JSON.stringify({name,grade}) });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi'); loadKids();
+}
+async function delKid(id){
+  if(!confirm('Xoá học sinh này?')) return;
+  const r = await fetch(API+`/api/admin/kids/${id}`, { method:'DELETE', headers:H() });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi'); loadKids();
+}
+document.getElementById('k-load').onclick = loadKids;
+
+/* ---- Questions ---- */
+async function createQuestion(){
+  const subject = document.getElementById('q-subject').value;
+  const type    = document.getElementById('q-type').value;      // 'mcq' or 'numeric'
+  const points  = Number(document.getElementById('q-points').value || 1);
+  const text    = document.getElementById('q-text').value.trim();
+  if(!text) return alert('Nhập nội dung câu hỏi');
+
+  let body = { subject, type, text, points };
+
+  if(type === 'mcq'){
+    // collect 4 choices with checkboxes
+    const labels = [...document.querySelectorAll('#q-choices .choice-label')].map(i=>i.value.trim());
+    const checks = [...document.querySelectorAll('#q-choices .choice-correct')].map(i=>i.checked);
+    const choices = labels
+      .map((label, i) => ({ label, is_correct: !!checks[i] }))
+      .filter(c => c.label); // drop empty lines
+    if(!choices.length) return alert('Thêm ít nhất 1 phương án');
+    body.choices = choices;
+
+  } else {
+    // numeric: send a single correct answer
+    const val = document.getElementById('q-num-correct').value.trim();
+    if(val === '') return alert('Nhập đáp án số đúng');
+    const tol = document.getElementById('q-num-tol').value.trim();
+    const num = Number(val);
+    if(!Number.isFinite(num)) return alert('Đáp án số không hợp lệ');
+
+    // ✅ Works with your current backend (no DB change): one correct "choice"
+    body.choices = [{ label: String(num), is_correct: true }];
+
+    // Also send structured fields (ignored by old backend; used if you later add columns)
+    const tolNum = tol === '' ? 0 : Number(tol);
+    body.correct_numeric = num;
+    body.tolerance = Number.isFinite(tolNum) ? tolNum : 0;
+  }
+
+  const r = await fetch(API+'/api/questions', {
+    method: 'POST', headers: H(), body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  if(!r.ok) return alert(j.error || 'Lỗi tạo câu hỏi');
+  alert('Đã tạo câu hỏi #' + j.id);
+  // reset a few fields
+  document.getElementById('q-text').value = '';
+  if(type === 'mcq'){
+    document.querySelectorAll('#q-choices .choice-label').forEach(i=>i.value='');
+    document.querySelectorAll('#q-choices .choice-correct').forEach(i=>i.checked=false);
+  }else{
+    document.getElementById('q-num-correct').value = '';
+    document.getElementById('q-num-tol').value = '0';
+  }
+  refreshTypeUI();
+  loadQuestions();
+}
+
+document.getElementById('q-create').onclick = createQuestion;
+
+async function loadQuestions(){
+  const subject = document.getElementById('q-filter-subj').value;
+  const type = document.getElementById('q-filter-type').value;
+  const q = document.getElementById('q-search').value.trim();
+  const url = new URL(API+'/api/questions', location.origin);
+  if(subject) url.searchParams.set('subject', subject);
+  if(type) url.searchParams.set('type', type);
+  if(q) url.searchParams.set('q', q);
+  const r = await fetch(url, { headers:H() }); const rows = await r.json();
+  if(!rows.length){ document.getElementById('q-list').innerHTML = '<em>Không có dữ liệu.</em>'; return; }
+  document.getElementById('q-list').innerHTML = `
+    <table><thead><tr><th>ID</th><th>Môn học</th><th>Loại</th><th>Điểm</th><th>Nội dung</th><th>Thao tác</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td>${x.id}</td>
+      <td>${x.subject}</td>
+      <td>${x.type}</td>
+      <td><input type="number" value="${x.points}" style="width:70px" id="qp-${x.id}"></td>
+      <td><textarea rows="2" style="width:100%" id="qt-${x.id}">${x.text}</textarea></td>
+      <td class="row">
+        <button class="button btn-grey" onclick="saveQ(${x.id})">Lưu</button>
+        <button class="button btn-outline" onclick="editChoices(${x.id})">Phương án</button>
+        <button class="button btn-outline" onclick="delQ(${x.id})">Xoá</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+document.getElementById('q-load').onclick = loadQuestions;
+
+async function saveQ(id){
+  const text = document.getElementById('qt-'+id).value;
+  const points = Number(document.getElementById('qp-'+id).value || 1);
+  const r = await fetch(API+`/api/questions/${id}`, { method:'PATCH', headers:H(), body:JSON.stringify({ text, points })});
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  loadQuestions();
+}
+async function delQ(id){
+  if(!confirm('Xoá câu hỏi này?')) return;
+  const r = await fetch(API+`/api/questions/${id}`, { method:'DELETE', headers:H() });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  loadQuestions();
+}
+async function editChoices(id){
+  // fetch and prompt replace (quick & simple UI)
+  const r = await fetch(API+`/api/questions/${id}`, { headers:H() });
+  const q = await r.json(); if(!r.ok) return alert('Không tải được');
+  if(q.type !== 'mcq') return alert('Chỉ áp dụng cho MCQ');
+  const current = q.choices.map(c => `${c.is_correct?'[x]':'[ ]'} ${c.label}`).join('\n');
+  const txt = prompt('Nhập lại các phương án (mỗi dòng = 1 PA; đánh dấu đúng bằng [x] ở đầu)\n\nVí dụ:\n[x] Đáp án đúng\n[ ] Đáp án sai\n\nHiện tại:\n'+current, current);
+  if(txt == null) return;
+  const choices = txt.split('\n').map(line=>{
+    const m = line.match(/^\s*(\[(x|X)\]|\[\s\])\s*(.*)$/);
+    if(m) return { is_correct: m[2]?.toLowerCase()==='x', label: m[3] };
+    return { is_correct: false, label: line.trim() };
+  }).filter(c=>c.label);
+  const rr = await fetch(API+`/api/questions/${id}/choices/replace`, { method:'POST', headers:H(), body:JSON.stringify({ choices })});
+  const jj = await rr.json(); if(!rr.ok) return alert(jj.error||'Lỗi');
+  alert('Đã cập nhật phương án');
+}
+
+/* ---- Competitions ---- */
+function toSQL(dtLocal){
+  // convert <input type="datetime-local"> to "YYYY-MM-DD HH:MM:SS"
+  if(!dtLocal) return '';
+  return dtLocal.replace('T',':').replace(/-([0-9]{2})$/, '-$1')  // ensure format
+    .replace(':', ' ')                                           // first ':' becomes space
+    .replace(' ', ' ').slice(0,19).replace('T',' ');
+}
+document.getElementById('c-create').onclick = async ()=>{
+  const title = document.getElementById('c-title').value.trim();
+  const subject = document.getElementById('c-subject').value;
+  const duration_seconds = Number(document.getElementById('c-duration').value || 600);
+  const max_attempts = Number(document.getElementById('c-max').value || 1);
+  const active = document.getElementById('c-active').checked;
+  const shuffle_questions = document.getElementById('c-shuffle').checked;
+  const questions_count = Number(document.getElementById('c-count').value || 10);
+  const start_at = document.getElementById('c-start').value;
+  const end_at = document.getElementById('c-end').value;
+  if(!title || !start_at || !end_at) return alert('Điền đủ tiêu đề/thời gian');
+  const r = await fetch(API+'/api/competitions', {
+    method:'POST', headers:H(), body:JSON.stringify({
+      title, subject, duration_seconds, start_at: toSQL(start_at), end_at: toSQL(end_at),
+      max_attempts, active, shuffle_questions, questions_count
+    })
+  });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  alert('Đã tạo cuộc thi #'+j.id);
+  loadComps();
+};
+async function loadComps(){
+  const subj = document.getElementById('c-filter-subj').value;
+  const r = await fetch(API+`/api/competitions?${subj?'subject='+subj+'&':''}active=`, { headers:H() });
+  const rows = await r.json();
+  const html = rows.length ? `
+    <table><thead><tr><th>ID</th><th>Tiêu đề</th><th>Môn</th><th>Thời lượng</th><th>Thời gian</th><th>Active</th><th>Thao tác</th></tr></thead>
+    <tbody>${rows.map(c=>`<tr>
+      <td>${c.id}</td>
+      <td><input id="ct-${c.id}" value="${c.title}" style="width:150px"></td>
+      <td>${c.subject}</td>
+      <td><input id="cd-${c.id}" type="number" value="${c.duration_seconds}" style="width:90px"></td>
+      <td class="muted">${new Date(c.start_at).toLocaleString('vi-VN')} → ${new Date(c.end_at).toLocaleString('vi-VN')}</td>
+      <td><input id="ca-${c.id}" type="checkbox" ${c.active?'checked':''}></td>
+      <td class="row">
+        <button class="button btn-grey" onclick="saveComp(${c.id})">Lưu</button>
+        <button class="button btn-outline" onclick="delComp(${c.id})">Xoá</button>
+      </td>
+    </tr>`).join('')}</tbody></table>` : '<em>Không có dữ liệu.</em>';
+  document.getElementById('c-list').innerHTML = html;
+}
+async function saveComp(id){
+  const title = document.getElementById('ct-'+id).value;
+  const duration_seconds = Number(document.getElementById('cd-'+id).value || 600);
+  const active = document.getElementById('ca-'+id).checked ? 1 : 0;
+  const r = await fetch(API+`/api/competitions/${id}`, { method:'PATCH', headers:H(), body:JSON.stringify({ title, duration_seconds, active }) });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  loadComps();
+}
+async function delComp(id){
+  if(!confirm('Xoá cuộc thi này?')) return;
+  const r = await fetch(API+`/api/competitions/${id}`, { method:'DELETE', headers:H() });
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  loadComps();
+}
+document.getElementById('c-load').onclick = loadComps;
+
+/* ---- init ---- */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(token){
+    const meRes = await fetch(API+'/api/me', { headers:H() });
+    if(meRes.ok){ const j = await meRes.json(); me = j.user; setToken(token, me); }
+    loadParents(); loadKids(); loadQuestions(); loadComps();
+  }
+});
+</script>
+</body>
+</html>

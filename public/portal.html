@@ -1,0 +1,188 @@
+<!doctype html><html lang="vi"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Cổng phụ huynh</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700;800&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  :root{ --font:"Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif }
+  body{ 
+    margin:0; background:#f6f7fb; color:#444; font-family:var(--font);
+    background: url("background-hoctiengviet.png") no-repeat top center;
+  background-size: cover; 
+  }
+  .box{ background:#fff; border:1px solid #eee; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06) }
+  .button{ font-family:var(--font); font-weight:800; padding:8px 14px; border-radius:10px; border:0; cursor:pointer }
+  .btn-grey{ background:#44A5DC; color:#fff } .btn-outline{ background:#fff; border:1px solid #ccc }
+  header{ padding:12px 18px; display:flex; justify-content:space-between; align-items:center }
+  #wrap{ max-width:1100px; margin:0 auto; padding:0 12px 24px }
+  .row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin:12px 0 }
+  input,select{ padding:8px 10px; border-radius:10px; border:1px solid #ddd; font-family:var(--font) }
+  table{ width:100%; border-collapse:collapse } th,td{ padding:8px; border-bottom:1px solid #eee } th{text-align:left}
+#name {
+  justify-content: flex-start; }
+  #logo {
+  position: absolute;
+  top: 15px;
+  left: 45px; }
+  #logo img {
+    width: 90px; }
+    .scale-up {
+  transform: scale(1);
+  transition: transform 0.2s; }
+</style>
+</head><body>
+<header class="box">
+  <div id="name">
+    <div id="logo" class="scale-up">
+      <a href="https://hoctiengviet.tforart.vn/home/">
+        <img src="logo.png" alt="logo">
+      </a>
+    </div>
+  </div>
+  <h1>Cuộc thi – Tiếng Việt & Toán 🏆 </h1>
+</header>
+<div id="wrap">
+  <div class="box" style="padding:12px">
+    <h3>👤 Tài khoản phụ huynh</h3>
+    <div class="row">
+      <div class="box" style="padding:12px">
+        <h4>Đăng nhập</h4>
+        <input id="login-email" placeholder="Email"><br><br>
+        <input id="login-pass" type="password" placeholder="Mật khẩu"><br><br>
+        <button id="login" class="button btn-grey">Đăng nhập</button>
+      </div>
+      <div class="box" style="padding:12px">
+        <h4>Đăng ký</h4>
+        <input id="reg-name" placeholder="Họ tên"><br><br>
+        <input id="reg-email" placeholder="Email"><br><br>
+        <input id="reg-pass" type="password" placeholder="Mật khẩu"><br><br>
+        <button id="register" class="button btn-grey">Tạo tài khoản</button>
+      </div>
+      <div class="box" style="padding:12px">
+        <h4>Trạng thái</h4><div id="status">Chưa đăng nhập</div><br>
+        <button id="logout" class="button btn-outline">Đăng xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="box" style="padding:12px; margin-top:12px">
+    <h3>👧👦 Học sinh</h3>
+    <div class="row">
+      <div class="box" style="padding:12px">
+        <h4>Thêm học sinh</h4>
+        <input id="kid-name" placeholder="Tên học sinh"><br><br>
+        <input id="kid-grade" placeholder="Tuổi (vd: 4,5,6)"><br><br>
+        <button id="add-kid" class="button btn-grey">➕ Thêm</button>
+      </div>
+      <div class="box" style="padding:12px">
+        <h4>Danh sách</h4>
+        <div id="kids"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box" style="padding:12px; margin-top:12px">
+    <h3>📅 Cuộc thi đang mở</h3>
+    <div><select id="subj"><option value="">Tất cả</option><option value="vi">Tiếng Việt</option><option value="math">Toán</option></select>
+         <button id="refresh" class="button btn-outline">Tải lại</button>
+    </div>
+    <div id="comps" class="row" style="margin-top:10px"></div>
+  </div>
+
+  <div class="box" style="padding:12px; margin-top:12px">
+    <h3>🥇 Bảng xếp hạng</h3>
+    <div><input id="lb-id" placeholder="ID cuộc thi" style="max-width:160px">
+         <button id="lb-load" class="button btn-outline">Hiển thị</button></div>
+    <div id="leaderboard" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8080'; // same origin; set to 'http://localhost:8080' if different
+
+const state = {
+  token: localStorage.getItem('hv_token') || '',
+  user:  JSON.parse(localStorage.getItem('hv_user') || 'null')
+};
+const H = (auth=true)=>({ 'Content-Type':'application/json', ...(auth&&state.token?{Authorization:'Bearer '+state.token}:{}) });
+
+function setAuth(t,u){ state.token=t; state.user=u;
+  t?localStorage.setItem('hv_token',t):localStorage.removeItem('hv_token');
+  u?localStorage.setItem('hv_user',JSON.stringify(u)):localStorage.removeItem('hv_user');
+  document.getElementById('status').textContent = u? `Đã đăng nhập: ${u.name}` : 'Chưa đăng nhập';
+}
+
+async function login(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const r = await fetch(API_BASE+'/api/auth/login',{method:'POST',headers:H(false),body:JSON.stringify({email,password})});
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  setAuth(j.token,j.user); loadKids(); loadComps();
+}
+async function register(){
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-pass').value;
+  const r = await fetch(API_BASE+'/api/auth/register',{method:'POST',headers:H(false),body:JSON.stringify({name,email,password})});
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  setAuth(j.token,j.user); loadKids(); loadComps();
+}
+function logout(){ setAuth('',null); document.getElementById('kids').innerHTML=''; document.getElementById('comps').innerHTML=''; }
+
+async function addKid(){
+  const name=document.getElementById('kid-name').value.trim();
+  const grade=document.getElementById('kid-grade').value.trim();
+  if(!name) return alert('Nhập tên');
+  const r=await fetch(API_BASE+'/api/kids',{method:'POST',headers:H(),body:JSON.stringify({name,grade})});
+  const j=await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  alert(`Đã thêm. Mã của bé: ${j.access_code}`);
+  document.getElementById('kid-name').value=''; document.getElementById('kid-grade').value=''; loadKids();
+}
+async function loadKids(){
+  if(!state.token) return;
+  const r=await fetch(API_BASE+'/api/kids',{headers:H()}); const rows=await r.json();
+  document.getElementById('kids').innerHTML = rows.length ? rows.map(k=>`
+    <div class="box" style="padding:8px; margin:6px 0">
+      <b>${k.name}</b> <span style="color:#777">(${k.grade||'—'})</span> • ID: ${k.id} • Mã: ${k.access_code}
+    </div>`).join('') : '<em>Chưa có học sinh.</em>';
+}
+async function loadComps(){
+  const subj=document.getElementById('subj').value;
+  const r=await fetch(API_BASE+'/api/competitions?active=1'+(subj?`&subject=${subj}`:'')); const comps=await r.json();
+  const wrap=document.getElementById('comps');
+  wrap.innerHTML = comps.length ? comps.map(c=>`
+    <div class="box" style="padding:12px">
+      <div><b>${c.title}</b></div>
+      <div style="color:#666">Môn: ${c.subject==='math'?'Toán':'Tiếng Việt'} • Thời lượng: ${c.duration_seconds}s</div>
+      <div style="font-size:12px;color:#888">ID: ${c.id}</div>
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+        <input class="kid-id" placeholder="ID học sinh" style="max-width:120px">
+        <button class="button btn-grey" onclick="startAttempt(${c.id}, this)">Bắt đầu</button>
+      </div>
+    </div>`).join('') : '<em>Chưa có cuộc thi mở.</em>';
+}
+window.startAttempt = async (compId, btn)=>{
+  if(!state.token) return alert('Hãy đăng nhập');
+  const kidInput = btn.parentElement.querySelector('.kid-id');
+  const kid_id = Number(kidInput.value.trim()); if(!kid_id) return alert('Nhập ID học sinh');
+  const r = await fetch(API_BASE+'/api/attempts/start',{method:'POST',headers:H(),body:JSON.stringify({kid_id, competition_id:compId})});
+  const j = await r.json(); if(!r.ok) return alert(j.error||'Lỗi');
+  // open kid quiz page with attempt token
+  location.href = `quiz.html?attempt=${j.attempt_id}&token=${j.token}&end=${encodeURIComponent(j.ends_at)}&ord=${j.order.join(',')}`;
+};
+async function loadLeaderboard(){
+  const id = Number(document.getElementById('lb-id').value.trim()); if(!id) return;
+  const r=await fetch(API_BASE+'/api/leaderboard?competition_id='+id); const rows=await r.json();
+  document.getElementById('leaderboard').innerHTML = rows.length ? `
+    <table><thead><tr><th>Hạng</th><th>Học sinh</th><th>Điểm</th><th>Thời gian</th></tr></thead>
+    <tbody>${rows.map(x=>`<tr><td>${x.rank}</td><td>${x.kid_name}</td><td>${x.best_score}</td><td>${x.best_duration ?? '-'}</td></tr>`).join('')}</tbody></table>`
+    : '<em>Chưa có kết quả.</em>';
+}
+document.getElementById('login').onclick=login;
+document.getElementById('register').onclick=register;
+document.getElementById('logout').onclick=logout;
+document.getElementById('add-kid').onclick=addKid;
+document.getElementById('refresh').onclick=loadComps;
+document.getElementById('lb-load').onclick=loadLeaderboard;
+document.addEventListener('DOMContentLoaded',()=>{ setAuth(state.token,state.user); if(state.user){ loadKids(); loadComps(); }});
+</script>
+</body></html>
