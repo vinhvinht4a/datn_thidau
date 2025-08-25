@@ -14,13 +14,13 @@ app.use(express.json());
 // If frontend & API are same Vercel project, you can disable CORS.
 // If not, keep this:
 const allowList = (process.env.CORS_ORIGIN || '').split(',').map(s=>s.trim()).filter(Boolean);
-app.use(cors({
-  origin(origin, cb){
-    if (!origin) return cb(null, true);               // same-origin / curl
-    return cb(null, allowList.length ? allowList.includes(origin) : true);
-  },
-  credentials: true,
-}));
+// app.use(cors({
+//   origin(origin, cb){
+//     if (!origin) return cb(null, true);               // same-origin / curl
+//     return cb(null, allowList.length ? allowList.includes(origin) : true);
+//   },
+//   credentials: true,
+// }));
 
 /** —— MySQL pool: reuse across invocations —— */
 let pool;
