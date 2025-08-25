@@ -1,30 +1,30 @@
 // api/index.js — Vercel serverless version mirroring server.js APIs
 import 'dotenv/config';
 import express from 'express';
-// import cors from 'cors';
+import cors from 'cors';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-// import serverless from 'serverless-http';
+import serverless from 'serverless-http';
 
 const app = express();
 app.use(express.json());
 
 // CORS: allow list via env CORS_ORIGIN (comma-separated); default allow all
-// const allowList = (process.env.CORS_ORIGIN || '')
-//   .split(',')
-//   .map(s => s.trim())
-//   .filter(Boolean);
-// app.use(
-//   cors({
-//     origin(origin, cb) {
-//       if (!origin) return cb(null, true); // same-origin / curl
-//       return cb(null, allowList.length ? allowList.includes(origin) : true);
-//     },
-//     credentials: true,
-//   })
-// );
+const allowList = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin) return cb(null, true); // same-origin / curl
+      return cb(null, allowList.length ? allowList.includes(origin) : true);
+    },
+    credentials: true,
+  })
+);
 
 /**
  * —— MySQL pool: reuse across invocations ——
@@ -241,34 +241,41 @@ app.patch('/api/questions/:id', auth, adminOnly, async (req, res) => {
 });
 
 // Replace MCQ choices
-app.post('/api/questions/:id/choices/replace', auth, adminOnly, async (req, res) => {
-  const db = getPool();
-  const id = Number(req.params.id);
-  const { choices = [] } = req.body || {};
-  const conn = await db.getConnection();
-  try {
-    await conn.beginTransaction();
-    await conn.execute('DELETE FROM choices WHERE question_id=?', [id]);
-    for (const c of choices) {
-      await conn.execute(
-        'INSERT INTO choices (question_id,label,is_correct) VALUES (?,?,?)',
-        [id, String(c.label || ''), c.is_correct ? 1 : 0]
-      );
+app.post(
+  '/api/questions/:id/choices/replace',
+  auth,
+  adminOnly,
+  async (req, res) => {
+    const db = getPool();
+    const id = Number(req.params.id);
+    const { choices = [] } = req.body || {};
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.execute('DELETE FROM choices WHERE question_id=?', [id]);
+      for (const c of choices) {
+        await conn.execute(
+          'INSERT INTO choices (question_id,label,is_correct) VALUES (?,?,?)',
+          [id, String(c.label || ''), c.is_correct ? 1 : 0]
+        );
+      }
+      await conn.commit();
+      res.json({ ok: true });
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
     }
-    await conn.commit();
-    res.json({ ok: true });
-  } catch (e) {
-    await conn.rollback();
-    throw e;
-  } finally {
-    conn.release();
   }
-});
+);
 
 // Delete question
 app.delete('/api/questions/:id', auth, adminOnly, async (req, res) => {
   const db = getPool();
-  await db.execute('DELETE FROM questions WHERE id=?', [Number(req.params.id)]);
+  await db.execute('DELETE FROM questions WHERE id=?', [
+    Number(req.params.id),
+  ]);
   res.json({ ok: true });
 });
 
@@ -714,4 +721,4 @@ app.delete('/api/admin/kids/:id', auth, adminOnly, async (req, res) => {
 });
 
 /* export handler for Vercel */
-export default app;
+export default serverless(app);
