@@ -6,7 +6,7 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import serverless from 'serverless-http';
+// import serverless from 'serverless-http';
 
 const app = express();
 app.use(express.json());
@@ -237,4 +237,4 @@ app.delete('/api/competitions/:id', auth, adminOnly, async (req,res)=>{
 // — For brevity here, reuse the same code you already have from server.js —
 
 /* export handler for Vercel */
-export default serverless(app);
+export default app;
