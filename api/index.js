@@ -1,30 +1,30 @@
 // api/index.js — Vercel serverless version mirroring server.js APIs
 import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
+// import cors from 'cors';
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import serverless from 'serverless-http';
+// import serverless from 'serverless-http';
 
 const app = express();
 app.use(express.json());
 
-// CORS: allow list via env CORS_ORIGIN (comma-separated); default allow all
-const allowList = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
-app.use(
-  cors({
-    origin(origin, cb) {
-      if (!origin) return cb(null, true); // same-origin / curl
-      return cb(null, allowList.length ? allowList.includes(origin) : true);
-    },
-    credentials: true,
-  })
-);
+// // CORS: allow list via env CORS_ORIGIN (comma-separated); default allow all
+// const allowList = (process.env.CORS_ORIGIN || '')
+//   .split(',')
+//   .map(s => s.trim())
+//   .filter(Boolean);
+// app.use(
+//   cors({
+//     origin(origin, cb) {
+//       if (!origin) return cb(null, true); // same-origin / curl
+//       return cb(null, allowList.length ? allowList.includes(origin) : true);
+//     },
+//     credentials: true,
+//   })
+// );
 
 /**
  * —— MySQL pool: reuse across invocations ——
@@ -721,4 +721,4 @@ app.delete('/api/admin/kids/:id', auth, adminOnly, async (req, res) => {
 });
 
 /* export handler for Vercel */
-export default serverless(app);
+export default app;
